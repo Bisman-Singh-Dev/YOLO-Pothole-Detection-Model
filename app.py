@@ -82,13 +82,22 @@ with tab1:
     
     with col_left:
         st.subheader("1. Provide Image")
-        source_mode = st.radio("Choose Input Mode:", ["Upload Image", "Pick Sample from Dataset"], horizontal=True)
+        source_mode = st.radio(
+            "Choose Input Mode:", 
+            ["Upload Image", "Pick Sample from Dataset", "📸 Live Camera (Webcam)"], 
+            horizontal=True
+        )
         
         input_image = None
         if source_mode == "Upload Image":
             uploaded_file = st.file_uploader("Upload road photo (JPG/PNG)", type=["jpg", "jpeg", "png"])
             if uploaded_file is not None:
                 input_image = Image.open(uploaded_file).convert("RGB")
+        elif source_mode == "📸 Live Camera (Webcam)":
+            st.info("Point your webcam/camera towards a road surface, screen, or test image.")
+            cam_picture = st.camera_input("Take a live photo for pothole detection")
+            if cam_picture is not None:
+                input_image = Image.open(cam_picture).convert("RGB")
         else:
             sample_dir = Path("dataset/images/test")
             if sample_dir.exists():
@@ -174,19 +183,47 @@ with tab1:
                 st.success("✅ No potholes detected above threshold. Road surface appears clear.")
 
 with tab2:
-    st.subheader("Dashcam / Video Hazard Detection")
-    st.markdown("Upload road inspection dashcam video footage to evaluate real-time hazard tracking.")
-    vid_file = st.file_uploader("Upload video (MP4, AVI)", type=["mp4", "avi", "mov"])
+    st.subheader("📹 Real-Time Live Webcam & Video Stream")
+    st.markdown("""
+    For continuous real-time 60 FPS live detection with high-performance OpenCV hardware acceleration, you can run the live camera stream directly from your terminal:
+    """)
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("#### Option A: One-Click Windows Launcher")
+        st.code("run_camera.bat", language="bat")
+        st.markdown("Simply double-click `run_camera.bat` in the project folder to open the camera HUD window.")
+        
+    with c2:
+        st.markdown("#### Option B: Terminal Command")
+        st.code("python test_camera.py\n# or\npython detect.py --camera", language="bash")
+        st.markdown("Opens your default webcam with live hazard bounding boxes and driver-assist HUD.")
+
+    st.markdown("---")
+    st.subheader("Dashcam Video Analysis")
+    st.markdown("Upload road inspection dashcam video footage:")
+    vid_file = st.file_uploader("Upload video file (MP4, AVI, MOV)", type=["mp4", "avi", "mov"])
     if vid_file:
-        st.info("Video inference engine is ready. For high-speed hardware acceleration on local video files, run: `python detect.py --source your_video.mp4`.")
+        st.info("To process and export annotated video with hardware acceleration, run: `python detect.py --source your_video.mp4 --weights weights/best.pt --save`")
 
 with tab3:
     st.subheader("System Architecture & Model Specifications")
     st.markdown("""
-    - **Detection Engine:** Ultralytics YOLO11 / YOLOv8
+    - **Detection Engine:** Ultralytics YOLO11
+    - **Trained Weights:** `weights/best.pt` (Trained on 4,054 dataset images)
+    - **Performance Metrics:** 76.1% Precision | 63.8% Recall | 71.3% mAP@50
     - **Resolution:** 640x640 multi-scale pyramid
-    - **Backbone:** Modified CSPDarknet with C3k2 blocks & SPPF
-    - **Attention:** C2PSA (Cross-Stage Partial with Spatial Attention)
-    - **Loss Function:** Dynamic Task-Aligned Loss (CIoU + DFL + BCE)
     - **Target Class:** `pothole` (Class 0)
     """)
+
+if __name__ == '__main__':
+    # Allows running directly with `python app.py` without requiring streamlit in PATH
+    import sys
+    try:
+        from streamlit.web import cli as stcli
+        sys.argv = ["streamlit", "run", __file__]
+        sys.exit(stcli.main())
+    except ImportError:
+        import subprocess
+        subprocess.run([sys.executable, "-m", "streamlit", "run", __file__])
+

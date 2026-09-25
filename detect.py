@@ -85,23 +85,36 @@ def run_detection(
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     
-    is_cam = source.isdigit() or source.startswith('rtsp://') or source.startswith('http://')
+    is_cam = (source.isdigit() or source.startswith('rtsp://') or source.startswith('http://'))
     is_video = not is_cam and Path(source).suffix.lower() in ['.mp4', '.avi', '.mov', '.mkv']
     
     telemetry_records = []
     
     if is_cam or is_video:
         cap_src = int(source) if source.isdigit() else source
-        cap = cv2.VideoCapture(cap_src)
-        if not cap.isOpened():
-            raise RuntimeError(f"Could not open video source: {source}")
+        
+        # Use DirectShow on Windows for instant webcam initialization
+        if is_cam and sys.platform == 'win32' and isinstance(cap_src, int):
+            cap = cv2.VideoCapture(cap_src, cv2.CAP_DSHOW)
+            if not cap.isOpened():
+                cap = cv2.VideoCapture(cap_src)
+        else:
+            cap = cv2.VideoCapture(cap_src)
             
-        w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        if not cap.isOpened():
+            print(f"❌ Error: Could not open video/camera source: {source}")
+            if is_cam:
+                print("💡 Hint: Ensure your webcam is connected and not currently used by another application (e.g. Teams, Zoom, Browser).")
+            return []
+            
+        w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
+        h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
         src_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+        if src_fps <= 0 or np.isnan(src_fps):
+            src_fps = 30.0
         
         writer = None
-        if save:
+        if save and not is_cam:
             out_vid = out_dir / "detection_output.mp4"
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             writer = cv2.VideoWriter(str(out_vid), fourcc, src_fps, (w, h))
@@ -109,6 +122,19 @@ def run_detection(
             
         frame_idx = 0
         prev_time = time.time()
+        show_hud_overlay = True
+        current_conf = conf
+        
+        if is_cam:
+            print("=" * 65)
+            print("  📹 Live Camera Feed Active!")
+            print("  Controls:")
+            print("    [Q] / [ESC] - Quit live detection")
+            print("    [S]         - Save snapshot of current frame")
+            print("    [+] / [=]   - Increase confidence threshold (+0.05)")
+            print("    [-] / [_]   - Decrease confidence threshold (-0.05)")
+            print("    [H]         - Toggle HUD on/off")
+            print("=" * 65)
         
         try:
             while cap.isOpened():
@@ -122,7 +148,7 @@ def run_detection(
                 prev_time = curr_time
                 
                 # Model inference
-                results = model.predict(frame, conf=conf, iou=iou, imgsz=imgsz, device=device, verbose=False)[0]
+                results = model.predict(frame, conf=current_conf, iou=iou, imgsz=imgsz, device=device, verbose=False)[0]
                 
                 frame_area = w * h
                 frame_dets = []
@@ -151,14 +177,33 @@ def run_detection(
                     cv2.putText(frame, label, (bx1 + 3, max(th + 2, by1 - 3)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
                     
                 telemetry_records.extend(frame_dets)
-                frame = draw_hud(frame, frame_dets, fps)
+                
+                if show_hud_overlay:
+                    frame = draw_hud(frame, frame_dets, fps)
+                    if is_cam:
+                        cv2.putText(frame, f"Conf: {current_conf:.2f} | [S] Snap [Q] Quit [H] HUD", (20, h - 15),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1, cv2.LINE_AA)
                 
                 if writer:
                     writer.write(frame)
                 if show:
-                    cv2.imshow("YOLO Pothole Detection HUD", frame)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                    cv2.imshow("YOLO Pothole Detection - Live Camera / Video", frame)
+                    key = cv2.waitKey(1) & 0xFF
+                    if key in [ord('q'), 27]: # 'q' or ESC
+                        print("\nExiting live inference stream.")
                         break
+                    elif key in [ord('s'), ord('S')]:
+                        snap_p = out_dir / f"snapshot_{int(time.time())}.jpg"
+                        cv2.imwrite(str(snap_p), frame)
+                        print(f"📸 Snapshot saved to: {snap_p}")
+                    elif key in [ord('+'), ord('=')]:
+                        current_conf = min(0.95, current_conf + 0.05)
+                        print(f"Confidence threshold adjusted to: {current_conf:.2f}")
+                    elif key in [ord('-'), ord('_')]:
+                        current_conf = max(0.05, current_conf - 0.05)
+                        print(f"Confidence threshold adjusted to: {current_conf:.2f}")
+                    elif key in [ord('h'), ord('H')]:
+                        show_hud_overlay = not show_hud_overlay
         finally:
             cap.release()
             if writer:
@@ -212,6 +257,14 @@ def run_detection(
                 save_p = out_dir / f"det_{img_p.name}"
                 cv2.imwrite(str(save_p), img)
                 
+            if show:
+                cv2.imshow("YOLO Pothole Detection", img)
+                if cv2.waitKey(0) & 0xFF in [ord('q'), 27]:
+                    break
+                    
+        if show:
+            cv2.destroyAllWindows()
+            
         print(f"Processed {len(img_paths)} images. Annotated results saved to: {out_dir}")
         
     # Export structured telemetry logs
@@ -232,25 +285,35 @@ def run_detection(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run YOLO Pothole Detection Inference")
-    parser.add_argument('--source', type=str, default="dataset/images/test", help="Image path, directory, video path, or webcam ID (0)")
+    parser.add_argument('--source', type=str, default="dataset/images/test", help="Image path, directory, video path, or camera ID (0)")
     parser.add_argument('--weights', type=str, default="weights/best.pt", help="Path to model weights")
     parser.add_argument('--conf', type=float, default=0.25, help="Confidence threshold")
     parser.add_argument('--iou', type=float, default=0.45, help="NMS IoU threshold")
     parser.add_argument('--imgsz', type=int, default=640, help="Inference resolution")
     parser.add_argument('--device', type=str, default=None, help="Device (e.g. 0, cpu)")
     parser.add_argument('--show', action='store_true', help="Display live rendering window")
+    parser.add_argument('--save', dest='save', action='store_true', default=True, help="Save detection results (images/video, default: True)")
     parser.add_argument('--no-save', dest='save', action='store_false', help="Disable saving results")
+    parser.add_argument('--camera', '--webcam', dest='camera', action='store_true', help="Open default camera (webcam index 0) for real-time live testing")
+    parser.add_argument('--cam-id', type=int, default=0, help="Camera device index (default: 0)")
     parser.add_argument('--output', type=str, default="runs/detect/predict", help="Output directory")
     args = parser.parse_args()
 
+    # If --camera or --webcam flag is provided, switch source to camera ID and enable display
+    source_val = args.source
+    show_val = args.show
+    if args.camera:
+        source_val = str(args.cam_id)
+        show_val = True
+
     run_detection(
-        source=args.source,
+        source=source_val,
         weights=args.weights,
         conf=args.conf,
         iou=args.iou,
         imgsz=args.imgsz,
         device=args.device,
         save=args.save,
-        show=args.show,
+        show=show_val,
         output_dir=args.output
     )

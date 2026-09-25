@@ -25,12 +25,15 @@ def export_model(weights="weights/best.pt", format_type="onnx", imgsz=640, half=
     print(f"FP16 half:       {half}")
     print(f"Dynamic shapes:  {dynamic}")
     
-    export_path = model.export(
-        format=format_type,
-        imgsz=imgsz,
-        half=half,
-        dynamic=dynamic
-    )
+    export_kwargs = {
+        'format': format_type,
+        'imgsz': imgsz,
+        'dynamic': dynamic
+    }
+    if half:
+        export_kwargs['half'] = True
+        
+    export_path = model.export(**export_kwargs)
     
     print("\n" + "=" * 65)
     print(f"  ✅ Model successfully exported to: {export_path}")

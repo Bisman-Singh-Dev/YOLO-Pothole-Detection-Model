@@ -138,24 +138,41 @@ The inference engine in `detect.py` supports images, image directories, dashcam 
 
 ### 1. Test on Images
 ```bash
-# Run detection on test split images
-python detect.py --source dataset/images/test --conf 0.25 --save
+# Run detection on test split images and save annotated results
+python detect.py --source dataset/images/test/pothole_dataset_1_train_image10.jpg --weights weights/best.pt --save
 ```
 
-### 2. Run on Dashcam Video
+### 2. Live Webcam / Camera Testing (Driver-Assist HUD)
+Test the trained YOLO pothole model in real time using your laptop/USB webcam:
+
+```bash
+# Option A: Dedicated Camera Tester
+python test_camera.py
+
+# Option B: Run via detect.py camera flag
+python detect.py --camera --weights weights/best.pt
+
+# Option C: Windows One-Click Batch Launcher
+# Double-click 'run_camera.bat' in the repository folder
+```
+
+**Interactive Real-Time Keyboard Controls:**
+| Key | Function |
+| :---: | :--- |
+| `[Q]` or `[ESC]` | Exit camera stream cleanly |
+| `[S]` | Save high-resolution annotated snapshot to `runs/detect/camera_snapshots/` |
+| `[+]` / `[=]` | Increase confidence threshold live (+0.05) |
+| `[-]` / `[_]` | Decrease confidence threshold live (-0.05) |
+| `[H]` | Toggle driver HUD overlay on/off |
+
+### 3. Run on Dashcam Video
 ```bash
 # Detect potholes in a driving video and render Driver HUD
-python detect.py --source dashcam_video.mp4 --conf 0.30 --save
-```
-
-### 3. Run Live from Webcam or RTSP Stream
-```bash
-# Live webcam feed (0) with real-time preview HUD
-python detect.py --source 0 --show
+python detect.py --source dashcam_video.mp4 --weights weights/best.pt --save
 ```
 
 ### Telemetry Output:
-All detections generate structured records in `runs/detect/predict/pothole_telemetry.csv`:
+All detections generate structured records in `runs/detect/predict/pothole_telemetry.csv` and `runs/detect/predict/pothole_telemetry.json`:
 ```csv
 frame,box,confidence,severity,coverage_pct
 1,"[142, 380, 290, 460]",0.8924,CRITICAL,9.45
@@ -183,26 +200,29 @@ To re-run evaluation benchmarks:
 python evaluate.py --weights weights/best.pt --split test
 ```
 
-This generates:
-- **mAP@0.50** and **mAP@0.50:0.95** scores
-- **Precision-Recall (PR) Curves**
-- **F1-Score Curves**
-- **Normalized Confusion Matrix**
-
 ---
 
 ## 🖥️ Interactive Web Dashboard
 
-Launch the Streamlit interactive dashboard to test individual images or videos with real-time sliders:
+Launch the interactive web application to test images, webcam snapshots, and live videos:
 
 ```bash
-streamlit run app.py
+# Method 1: Direct Python execution
+python app.py
+
+# Method 2: Python module execution
+python -m streamlit run app.py
+
+# Method 3: Windows One-Click Launcher
+# Double-click 'run_app.bat' in the project directory
 ```
 
-Features:
-- Live confidence & IoU threshold adjustment sliders
-- Severity hazard color coding & distribution metrics
-- One-click CSV telemetry report download
+**Features:**
+- **📸 Live Camera (Webcam Snapshot)**: Take real-time pictures directly in the browser to detect potholes instantly.
+- **📁 Custom Upload & Dataset Samples**: Inspect custom road images or select from 4,000+ benchmark images.
+- **⚙️ Dynamic Tuning**: Real-time confidence and IoU threshold sliders.
+- **📊 Hazard Analytics**: Automatic severity categorization (CRITICAL / MODERATE / MINOR) with road area coverage metrics.
+- **📥 Telemetry Export**: One-click CSV log download for municipal maintenance ticketing.
 
 ---
 
