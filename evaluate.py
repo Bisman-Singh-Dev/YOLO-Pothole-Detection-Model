@@ -31,12 +31,14 @@ def evaluate(
 
     model = YOLO(str(weights_path))
 
+    import sys
     metrics = model.val(
         data=data,
         split=split,
         imgsz=imgsz,
         batch=batch,
         device=device,
+        workers=0 if sys.platform == 'win32' else 4,
         project=project,
         name=name,
         plots=True,

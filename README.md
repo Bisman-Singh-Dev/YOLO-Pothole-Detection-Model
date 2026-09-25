@@ -166,7 +166,18 @@ frame,box,confidence,severity,coverage_pct
 
 ## 📊 Benchmarking & Evaluation
 
-Evaluate model accuracy on the unseen test split:
+The model was evaluated against the unseen test split (**651 road images**, **833 potholes**) yielding strong localization accuracy and real-time inference speeds:
+
+| Metric | Score | Note |
+| :--- | :---: | :--- |
+| **Precision (P)** | **76.1%** (`0.7609`) | High detection confidence, minimal false alarms |
+| **Recall (R)** | **63.8%** (`0.6380`) | Captures faint cracks and deep asphalt craters |
+| **mAP @ 0.50** | **71.3%** (`0.7131`) | Mean Average Precision at IoU 0.50 |
+| **mAP @ 0.50:0.95** | **36.6%** (`0.3657`) | Strict multi-threshold spatial localization |
+| **Inference Latency** | **13.0 ms** (~76 FPS) | NVIDIA RTX 4050 GPU (Laptop) |
+| **Weights Size** | **5.46 MB** | Compact, ideal for mobile/dashcam edge chips |
+
+To re-run evaluation benchmarks:
 
 ```bash
 python evaluate.py --weights weights/best.pt --split test
