@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyTorch & YOLO runs and caches
+runs/
+*.pt
+!weights/*.pt
+!weights/best.pt
+*.onnx
+*.engine
+*.tflite
+*.torchscript
+*.mlmodel
+
+# Caches & temporary files
+.cache/
+*.log
+.vscode/
+.idea/
+*.swp
+*.bak
+*~
+
+# Operating System files
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Virtual Environments
+venv/
+env/
+.venv/
