@@ -50,15 +50,15 @@ The pipeline is trained and validated on a curated dataset of **4,054 road image
 
 ```mermaid
 flowchart LR
-    A[Road Camera / Dashcam] --> B[Frame Capture & Normalization]
-    B --> C[YOLO11 / YOLOv8 Backbone & C2PSA Attention]
-    C --> D[Multi-Scale Feature Pyramid PAN-FPN]
-    D --> E[Anchor-Free Detection Head]
-    E --> F[Non-Maximum Suppression (NMS)]
-    F --> G[Pothole BBoxes & Confidences]
-    G --> H[Severity Engine (Critical / Moderate / Minor)]
-    H --> I[Real-Time Driver HUD Alert]
-    H --> J[Municipal GIS Telemetry Log]
+    A["Road Camera / Dashcam"] --> B["Frame Capture & Normalization"]
+    B --> C["YOLO11 / YOLOv8 Backbone & Attention"]
+    C --> D["Multi-Scale Feature Pyramid (PAN-FPN)"]
+    D --> E["Anchor-Free Detection Head"]
+    E --> F["Non-Maximum Suppression (NMS)"]
+    F --> G["Pothole BBoxes & Confidences"]
+    G --> H["Severity Engine (Critical / Moderate / Minor)"]
+    H --> I["Real-Time Driver HUD Alert"]
+    H --> J["Municipal GIS Telemetry Log"]
 ```
 
 ---
