@@ -216,14 +216,3 @@ with tab3:
     - **Target Class:** `pothole` (Class 0)
     """)
 
-if __name__ == '__main__':
-    # Allows running directly with `python app.py` without requiring streamlit in PATH
-    import sys
-    try:
-        from streamlit.web import cli as stcli
-        sys.argv = ["streamlit", "run", __file__]
-        sys.exit(stcli.main())
-    except ImportError:
-        import subprocess
-        subprocess.run([sys.executable, "-m", "streamlit", "run", __file__])
-

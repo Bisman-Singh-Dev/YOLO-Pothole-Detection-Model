@@ -207,8 +207,8 @@ python evaluate.py --weights weights/best.pt --split test
 Launch the interactive web application to test images, webcam snapshots, and live videos:
 
 ```bash
-# Method 1: Direct Python execution
-python app.py
+# Method 1: Python Launcher Helper
+python run_app.py
 
 # Method 2: Python module execution
 python -m streamlit run app.py
