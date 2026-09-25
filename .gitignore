@@ -15,6 +15,7 @@ runs/
 *.mlmodel
 
 # Caches & temporary files
+*.cache
 .cache/
 *.log
 .vscode/

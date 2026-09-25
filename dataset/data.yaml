@@ -1,0 +1,7 @@
+path: C:/Users/Bisman Singh/.gemini/antigravity-ide/scratch/YOLO-Pothole-Detection-Model/dataset
+train: images/train
+val: images/val
+test: images/test
+nc: 1
+names:
+- pothole
