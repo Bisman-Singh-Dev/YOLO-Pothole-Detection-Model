@@ -11,6 +11,10 @@ from pathlib import Path
 import torch
 from ultralytics import YOLO
 
+# Ensure utf-8 encoding on Windows console
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 def train(
     data="data.yaml",
     model_name="yolo11s.pt",
@@ -65,6 +69,7 @@ def train(
         optimizer=optimizer,
         lr0=lr0,
         lrf=0.01,
+        cos_lr=True,       # Cosine learning rate scheduler for smoother convergence
         patience=patience,
         save=True,
         save_period=5,
@@ -79,8 +84,8 @@ def train(
         perspective=0.0005,# Road surface perspective distortion
         fliplr=0.5,        # Horizontal flip
         mosaic=1.0,        # Multi-scale contextual mosaic
-        mixup=0.1,         # Image blending
-        close_mosaic=10,   # Disable mosaic in final 10 epochs for fine-tuning
+        mixup=0.15,        # Image blending
+        close_mosaic=min(5, epochs // 4) if epochs > 5 else 0, # Disable mosaic in final epochs for pinpoint edge localization
         workers=0 if sys.platform == 'win32' else 4,
         verbose=True
     )

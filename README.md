@@ -28,7 +28,7 @@
 
 Road anomalies and potholes cause billions of dollars in vehicular damage and thousands of accidents globally each year. This repository delivers an industrial-grade road damage detection solution powered by state-of-the-art **YOLO (YOLO11 / YOLOv8)** architectures. 
 
-The pipeline is trained and validated on a curated dataset of **4,054 road images** with **5,601 ground-truth pothole annotations**, optimized specifically to distinguish complex asphalt cracks, irregular crater boundaries, shadows, wet roads, and varying weather conditions.
+The pipeline is trained and validated on an expanded multi-source dataset of **4,719 road images** with **7,340 ground-truth pothole annotations** (combining synthetic and real-world asphalt datasets, including high-resolution Pascal VOC road damage captures), optimized specifically to distinguish complex asphalt cracks, irregular crater boundaries, shadows, wet roads, and varying weather conditions.
 
 ---
 
@@ -64,15 +64,15 @@ flowchart LR
 ---
 
 ## 📂 Dataset Overview
-
-The dataset consists of **4,054 high-resolution road images** partitioned into standard train, validation, and test splits with **5,601 verified annotations**:
-
+ 
+The dataset consists of **4,719 high-resolution road images** partitioned into standard train, validation, and test splits with **7,340 verified annotations**:
+ 
 | Split | Images | Format | Description |
 | :--- | :---: | :---: | :--- |
-| **Train** | **2,749** | Normalized YOLO | Used for model optimization with mosaic & mixup augmentations |
-| **Validation** | **654** | Normalized YOLO | Used for early stopping, learning rate scheduling & checkpointing |
-| **Test** | **651** | Normalized YOLO | Unseen benchmark evaluation set |
-| **Total** | **4,054** | **1 Class (`pothole`)** | Complete self-contained dataset included in `dataset/` |
+| **Train** | **3,281** | Normalized YOLO | Used for model optimization with mosaic, mixup, and HSV road augmentations |
+| **Validation** | **720** | Normalized YOLO | Used for early stopping, learning rate scheduling & checkpointing |
+| **Test** | **718** | Normalized YOLO | Unseen benchmark evaluation set across varied road terrains |
+| **Total** | **4,719** | **1 Class (`pothole`)** | Complete self-contained dataset included in `dataset/` (**7,340 annotations**) |
 
 ### Annotation Format (`dataset/labels/`):
 Each label `.txt` file follows standard YOLO object detection coordinates:
