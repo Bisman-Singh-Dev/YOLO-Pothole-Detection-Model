@@ -95,7 +95,9 @@ def train(
     print("=" * 65)
 
     # Copy best weights to convenient weights/ directory
-    best_pt = Path(project) / name / "weights" / "best.pt"
+    best_pt = Path(results.save_dir) / "weights" / "best.pt"
+    if not best_pt.exists():
+        best_pt = Path(project) / name / "weights" / "best.pt"
     if best_pt.exists():
         target_dir = Path(save_dir)
         target_dir.mkdir(parents=True, exist_ok=True)
