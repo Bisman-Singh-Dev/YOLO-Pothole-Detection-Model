@@ -1,9 +1,3 @@
-"""
-Ingest Pascal VOC XML Pothole Dataset into YOLO Format
-Extracts images and annotations from archive (3).zip, converts bounding boxes to YOLO format,
-validates coordinates, and merges them into train/val/test splits.
-"""
-
 import os
 import sys
 import zipfile
@@ -13,7 +7,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-# Ensure utf-8 encoding on Windows console
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -21,7 +14,6 @@ def convert_voc_to_yolo(xml_content, img_width, img_height):
     root = ET.fromstring(xml_content)
     yolo_lines = []
     
-    # Check width/height from XML if provided
     size_elem = root.find("size")
     if size_elem is not None:
         try:
@@ -53,7 +45,6 @@ def convert_voc_to_yolo(xml_content, img_width, img_height):
         except (AttributeError, ValueError):
             continue
             
-        # Clamp coordinates to image boundaries
         xmin = max(0.0, min(float(img_width), xmin))
         ymin = max(0.0, min(float(img_height), ymin))
         xmax = max(0.0, min(float(img_width), xmax))
@@ -62,7 +53,6 @@ def convert_voc_to_yolo(xml_content, img_width, img_height):
         bw = xmax - xmin
         bh = ymax - ymin
         
-        # Filter zero or degenerate boxes
         if bw <= 1 or bh <= 1:
             continue
             
@@ -71,7 +61,6 @@ def convert_voc_to_yolo(xml_content, img_width, img_height):
         w_norm = bw / float(img_width)
         h_norm = bh / float(img_height)
         
-        # Clamp normalized values
         x_center = max(0.0, min(1.0, x_center))
         y_center = max(0.0, min(1.0, y_center))
         w_norm = max(0.0, min(1.0, w_norm))
@@ -113,11 +102,9 @@ def ingest_dataset(
         xml_files = sorted([f for f in namelist if f.startswith("annotations/") and f.endswith(".xml")])
         print(f"🔎 Found {len(xml_files)} annotation files in archive.")
         
-        # Pair XMLs with corresponding images
         pairs = []
         for xml_file in xml_files:
             stem = Path(xml_file).stem
-            # Check possible image names (.png, .jpg, .jpeg)
             possible_imgs = [
                 f"images/{stem}.png",
                 f"images/{stem}.jpg",
@@ -133,7 +120,6 @@ def ingest_dataset(
                 
         print(f"🔗 Successfully matched {len(pairs)} image-annotation pairs.")
         
-        # Shuffle deterministically
         random.seed(seed)
         random.shuffle(pairs)
         
@@ -167,21 +153,18 @@ def ingest_dataset(
                 xml_content = zf.read(xml_file).decode("utf-8", errors="replace")
                 yolo_labels = convert_voc_to_yolo(xml_content, w, h)
                 
-                # We can write positive or negative samples
                 target_stem = f"voc_{stem}"
                 out_img_path = images_dir / split_name / f"{target_stem}.jpg"
                 out_lbl_path = labels_dir / split_name / f"{target_stem}.txt"
                 
-                # Save image as high-quality JPEG
                 cv2.imwrite(str(out_img_path), img, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
                 
-                # Write YOLO label file
                 with open(out_lbl_path, "w", encoding="utf-8") as lf:
                     if yolo_labels:
                         lf.write("\n".join(yolo_labels) + "\n")
                         stats["boxes"] += len(yolo_labels)
                     else:
-                        lf.write("") # Background negative image
+                        lf.write("")
                         
                 stats[split_name] += 1
                 
@@ -193,7 +176,6 @@ def ingest_dataset(
         print(f"Added to Test:  {stats['test']} images")
         print(f"Total New Pothole Bounding Boxes: {stats['boxes']}")
         
-        # Clear existing ultralytics cache files to force refresh
         for cache_file in labels_dir.glob("*.cache"):
             try:
                 cache_file.unlink()

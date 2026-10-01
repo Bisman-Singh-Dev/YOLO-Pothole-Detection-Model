@@ -1,8 +1,3 @@
-"""
-Interactive Web Application for Real-Time Pothole Detection & Hazard Assessment
-Built with Streamlit and Ultralytics YOLO.
-"""
-
 import os
 import io
 import time
@@ -21,7 +16,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling
 st.markdown("""
     <style>
     .main-header {
@@ -47,7 +41,6 @@ st.markdown("""
 st.markdown('<div class="main-header">🛣️ YOLO Pothole Detection & Road Safety System</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Automated deep learning road inspection for municipal management, dashcam warnings, and smart city infrastructure.</div>', unsafe_allow_html=True)
 
-# Sidebar Configuration
 st.sidebar.header("⚙️ Model Configuration")
 
 weights_opt = ["weights/best.pt", "yolo11s.pt", "yolo11n.pt", "yolov8s.pt"]
@@ -158,7 +151,6 @@ with tab1:
                 
             st.image(annotated_frame, caption="YOLO Annotated Detections", use_container_width=True)
             
-            # Metrics
             m1, m2, m3 = st.columns(3)
             m1.metric("Potholes Detected", len(detections))
             crit_count = sum(1 for d in detections if d["Severity"] == "CRITICAL")
@@ -170,7 +162,6 @@ with tab1:
                 df_det = pd.DataFrame(detections)
                 st.dataframe(df_det, use_container_width=True)
                 
-                # Download button
                 csv_buffer = io.StringIO()
                 df_det.to_csv(csv_buffer, index=False)
                 st.download_button(

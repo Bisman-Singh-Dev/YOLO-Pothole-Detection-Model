@@ -1,8 +1,3 @@
-"""
-Visualize Ground Truth YOLO Annotations
-Draws bounding boxes from labels onto images to verify annotation accuracy.
-"""
-
 import os
 import random
 import argparse
@@ -26,7 +21,6 @@ def draw_yolo_boxes(img, label_path, class_names):
         cls_id = int(parts[0])
         x_c, y_c, bw, bh = map(float, parts[1:])
         
-        # De-normalize coordinates
         bx1 = int((x_c - bw / 2.0) * w)
         by1 = int((y_c - bh / 2.0) * h)
         bx2 = int((x_c + bw / 2.0) * w)
@@ -34,10 +28,8 @@ def draw_yolo_boxes(img, label_path, class_names):
         
         cls_name = class_names[cls_id] if cls_id < len(class_names) else f"cls_{cls_id}"
         
-        # Draw bounding box (vibrant red-orange for pothole hazard)
         cv2.rectangle(img, (bx1, by1), (bx2, by2), (0, 69, 255), 2)
         
-        # Label badge background
         badge_text = f"{cls_name}"
         (tw, th), _ = cv2.getTextSize(badge_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         cv2.rectangle(img, (bx1, max(0, by1 - th - 6)), (bx1 + tw + 6, max(th + 6, by1)), (0, 69, 255), -1)
@@ -58,7 +50,6 @@ def visualize(dataset_dir="dataset", split="train", num_samples=6, output_dir="r
         print(f"No images found in {img_dir}")
         return
         
-    # Prefer images that actually have labels with >0 boxes
     valid_samples = []
     for img_path in images:
         lbl_path = lbl_dir / f"{img_path.stem}.txt"

@@ -1,14 +1,8 @@
-"""
-Model Export Script for Edge & Production Deployment
-Exports trained YOLO model to ONNX, TensorRT, TorchScript, OpenVINO, CoreML, and TFLite.
-"""
-
 import sys
 import argparse
 from pathlib import Path
 from ultralytics import YOLO
 
-# Ensure utf-8 encoding on Windows console
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 

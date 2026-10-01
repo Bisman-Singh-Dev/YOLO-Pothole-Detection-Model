@@ -1,16 +1,3 @@
-"""
-Live Webcam Testing & Interactive Hazard Demo for YOLO Pothole Detection Model.
-Run simply with:
-    python test_camera.py
-
-Controls:
-    [Q] or [ESC] : Exit the camera feed
-    [S]          : Save high-resolution annotated snapshot
-    [+] or [=]   : Increase confidence threshold (+0.05)
-    [-] or [_]   : Decrease confidence threshold (-0.05)
-    [H]          : Toggle HUD overlay
-"""
-
 import sys
 import os
 import time
@@ -20,28 +7,24 @@ import numpy as np
 from ultralytics import YOLO
 
 def classify_hazard(box_area, frame_area):
-    """Categorize pothole into severity levels based on road surface ratio."""
     ratio = (box_area / frame_area) * 100.0
     if ratio >= 8.0:
-        return "CRITICAL", (0, 0, 255), ratio       # BGR: Red
+        return "CRITICAL", (0, 0, 255), ratio
     elif ratio >= 2.5:
-        return "MODERATE", (0, 140, 255), ratio     # BGR: Orange
+        return "MODERATE", (0, 140, 255), ratio
     else:
-        return "MINOR", (0, 215, 255), ratio        # BGR: Yellow/Amber
+        return "MINOR", (0, 215, 255), ratio
 
 def draw_driver_hud(frame, detections, fps, conf_thresh, show_hud=True):
-    """Draw an advanced automotive-style HUD overlay on camera frame."""
     if not show_hud:
         return frame
         
     h, w = frame.shape[:2]
     
-    # Top Telemetry Header Bar
     overlay = frame.copy()
     cv2.rectangle(overlay, (0, 0), (w, 55), (15, 20, 25), -1)
     cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
     
-    # HUD Text
     cv2.putText(frame, "AI ROAD HAZARD DETECTION [LIVE CAMERA]", (15, 24),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 240, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, f"FPS: {fps:.1f}", (w - 130, 24),
@@ -53,7 +36,6 @@ def draw_driver_hud(frame, detections, fps, conf_thresh, show_hud=True):
     stat_msg = f"Detected: {pothole_count} | Critical: {crit_count} | Conf: {conf_thresh:.2f}"
     cv2.putText(frame, stat_msg, (15, 46), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1, cv2.LINE_AA)
     
-    # Critical Alert Banner (if critical pothole is detected)
     if crit_count > 0:
         banner_w = min(480, w - 40)
         bx1 = (w - banner_w) // 2
@@ -63,7 +45,6 @@ def draw_driver_hud(frame, detections, fps, conf_thresh, show_hud=True):
         cv2.putText(frame, "CRITICAL: POTHOLE HAZARD AHEAD!", (bx1 + 20, h - 58),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2, cv2.LINE_AA)
         
-    # Bottom Control Hints
     controls_text = "[Q] Quit | [S] Snapshot | [+/-] Adjust Conf | [H] Toggle HUD"
     cv2.putText(frame, controls_text, (15, h - 15),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 180, 180), 1, cv2.LINE_AA)
@@ -71,7 +52,6 @@ def draw_driver_hud(frame, detections, fps, conf_thresh, show_hud=True):
     return frame
 
 def open_webcam(cam_id=0):
-    """Open camera with Windows DirectShow optimization."""
     if sys.platform == 'win32':
         cap = cv2.VideoCapture(cam_id, cv2.CAP_DSHOW)
         if not cap.isOpened():
@@ -85,7 +65,6 @@ def run_camera_test(weights="weights/best.pt", cam_id=0, conf=0.25):
     print("  📹 Launching YOLO Pothole Detection Live Camera Test")
     print("=" * 65)
     
-    # Locate model checkpoint
     weights_path = Path(weights)
     if not weights_path.exists():
         print(f"⚠️ Warning: Checkpoint '{weights}' not found. Loading base model 'yolo11s.pt'.")
@@ -94,7 +73,6 @@ def run_camera_test(weights="weights/best.pt", cam_id=0, conf=0.25):
     print(f"Loading weights: {weights_path}")
     model = YOLO(str(weights_path))
     
-    # Output directory for snapshots
     snap_dir = Path("runs/detect/camera_snapshots")
     snap_dir.mkdir(parents=True, exist_ok=True)
     
@@ -102,7 +80,6 @@ def run_camera_test(weights="weights/best.pt", cam_id=0, conf=0.25):
     cap = open_webcam(cam_id)
     
     if not cap.isOpened():
-        # Try camera index 1 if 0 failed
         print(f"⚠️ Could not open camera {cam_id}. Testing camera index 1...")
         cap = open_webcam(1)
         if cap.isOpened():
@@ -120,7 +97,6 @@ def run_camera_test(weights="weights/best.pt", cam_id=0, conf=0.25):
         print("   python detect.py --source dashcam_video.mp4")
         return
         
-    # Set camera capture resolution
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     
@@ -152,7 +128,6 @@ def run_camera_test(weights="weights/best.pt", cam_id=0, conf=0.25):
             fps = 1.0 / max(1e-5, (curr_time - prev_time))
             prev_time = curr_time
             
-            # Real-time YOLO inference
             results = model.predict(frame, conf=current_conf, iou=0.45, imgsz=640, verbose=False)[0]
             
             frame_dets = []
@@ -171,7 +146,6 @@ def run_camera_test(weights="weights/best.pt", cam_id=0, conf=0.25):
                     'ratio': ratio
                 })
                 
-                # Draw styled bounding box
                 cv2.rectangle(frame, (bx1, by1), (bx2, by2), color, 2)
                 label = f"Pothole {confidence:.2f} [{sev}]"
                 (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
@@ -179,13 +153,12 @@ def run_camera_test(weights="weights/best.pt", cam_id=0, conf=0.25):
                 cv2.putText(frame, label, (bx1 + 3, max(th + 2, by1 - 3)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
                             
-            # Render HUD
             frame = draw_driver_hud(frame, frame_dets, fps, current_conf, show_hud)
             
             cv2.imshow("YOLO Pothole Detector - Live Camera Feed", frame)
             key = cv2.waitKey(1) & 0xFF
             
-            if key in [ord('q'), 27]: # 'q' or ESC
+            if key in [ord('q'), 27]:
                 print("\nCamera test closed by user.")
                 break
             elif key in [ord('s'), ord('S')]:

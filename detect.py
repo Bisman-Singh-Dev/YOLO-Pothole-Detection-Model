@@ -1,9 +1,3 @@
-"""
-Real-Time YOLO Pothole Detection & Road Hazard Analysis Engine
-Supports single images, directories, video files (dashcams), and live webcam/RTSP feeds.
-Includes severity classification, driver HUD alert overlay, and structured telemetry export.
-"""
-
 import os
 import sys
 import time
@@ -16,29 +10,21 @@ import pandas as pd
 from ultralytics import YOLO
 
 def classify_severity(box_area, frame_area):
-    """
-    Classify pothole severity based on relative road coverage area.
-    """
     ratio = (box_area / frame_area) * 100.0
     if ratio >= 8.0:
-        return "CRITICAL", (0, 0, 255), ratio       # Bright Red
+        return "CRITICAL", (0, 0, 255), ratio
     elif ratio >= 2.5:
-        return "MODERATE", (0, 140, 255), ratio     # Orange
+        return "MODERATE", (0, 140, 255), ratio
     else:
-        return "MINOR", (0, 215, 255), ratio        # Amber/Yellow
+        return "MINOR", (0, 215, 255), ratio
 
 def draw_hud(frame, detections, fps=0.0):
-    """
-    Renders a driver-assist HUD on the frame with hazard telemetry.
-    """
     h, w = frame.shape[:2]
     
-    # Top telemetry panel bar
     overlay = frame.copy()
     cv2.rectangle(overlay, (0, 0), (w, 55), (20, 24, 30), -1)
     cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
     
-    # Text headers
     cv2.putText(frame, "ROAD HAZARD DETECTION SYSTEM", (20, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 240, 255), 2, cv2.LINE_AA)
     cv2.putText(frame, f"FPS: {fps:.1f}", (w - 140, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 120), 2, cv2.LINE_AA)
     
@@ -48,7 +34,6 @@ def draw_hud(frame, detections, fps=0.0):
     status_text = f"Potholes Detected: {pothole_count} | Critical Hazards: {crit_count}"
     cv2.putText(frame, status_text, (20, 48), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1, cv2.LINE_AA)
     
-    # Alert banner if critical pothole is detected
     if crit_count > 0:
         alert_w = min(500, w - 40)
         ax1 = (w - alert_w) // 2
@@ -93,7 +78,6 @@ def run_detection(
     if is_cam or is_video:
         cap_src = int(source) if source.isdigit() else source
         
-        # Use DirectShow on Windows for instant webcam initialization
         if is_cam and sys.platform == 'win32' and isinstance(cap_src, int):
             cap = cv2.VideoCapture(cap_src, cv2.CAP_DSHOW)
             if not cap.isOpened():
@@ -147,7 +131,6 @@ def run_detection(
                 fps = 1.0 / max(1e-5, (curr_time - prev_time))
                 prev_time = curr_time
                 
-                # Model inference
                 results = model.predict(frame, conf=current_conf, iou=iou, imgsz=imgsz, device=device, verbose=False)[0]
                 
                 frame_area = w * h
@@ -169,7 +152,6 @@ def run_detection(
                         'coverage_pct': round(ratio, 2)
                     })
                     
-                    # Draw detection box with severity styling
                     cv2.rectangle(frame, (bx1, by1), (bx2, by2), color, 2)
                     label = f"Pothole {confidence:.2f} ({sev})"
                     (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
@@ -189,7 +171,7 @@ def run_detection(
                 if show:
                     cv2.imshow("YOLO Pothole Detection - Live Camera / Video", frame)
                     key = cv2.waitKey(1) & 0xFF
-                    if key in [ord('q'), 27]: # 'q' or ESC
+                    if key in [ord('q'), 27]:
                         print("\nExiting live inference stream.")
                         break
                     elif key in [ord('s'), ord('S')]:
@@ -212,7 +194,6 @@ def run_detection(
                 cv2.destroyAllWindows()
                 
     else:
-        # Directory or single image
         src_path = Path(source)
         if src_path.is_file():
             img_paths = [src_path]
@@ -267,7 +248,6 @@ def run_detection(
             
         print(f"Processed {len(img_paths)} images. Annotated results saved to: {out_dir}")
         
-    # Export structured telemetry logs
     if export_csv and telemetry_records:
         csv_file = out_dir / "pothole_telemetry.csv"
         json_file = out_dir / "pothole_telemetry.json"
@@ -299,7 +279,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=str, default="runs/detect/predict", help="Output directory")
     args = parser.parse_args()
 
-    # If --camera or --webcam flag is provided, switch source to camera ID and enable display
     source_val = args.source
     show_val = args.show
     if args.camera:

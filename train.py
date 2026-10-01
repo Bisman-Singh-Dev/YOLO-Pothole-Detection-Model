@@ -1,9 +1,3 @@
-"""
-High-Accuracy YOLO Pothole Detection Training Pipeline
-Optimized for road asphalt anomalies, irregular crater contours, and varying lighting.
-Supports YOLO11, YOLOv8, YOLOv9, and YOLOv10 architectures via Ultralytics.
-"""
-
 import os
 import sys
 import argparse
@@ -11,7 +5,6 @@ from pathlib import Path
 import torch
 from ultralytics import YOLO
 
-# Ensure utf-8 encoding on Windows console
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -33,7 +26,6 @@ def train(
     print("  🚀 Starting YOLO Pothole Detection Training Pipeline")
     print("=" * 65)
     
-    # Check compute device
     if device is None:
         if torch.cuda.is_available():
             device = 0
@@ -46,7 +38,6 @@ def train(
     else:
         print(f"Hardware Device configured: {device}")
 
-    # Resolve data path
     data_path = Path(data).resolve()
     if not data_path.exists():
         raise FileNotFoundError(f"Dataset configuration not found at: {data_path}")
@@ -54,10 +45,8 @@ def train(
     print(f"🧠 Model Architecture: {model_name}")
     print(f"⚙️ Hyperparameters: Epochs={epochs}, ImgSz={imgsz}, Batch={batch}, Patience={patience}")
 
-    # Load YOLO model
     model = YOLO(model_name)
 
-    # Train model with asphalt-optimized augmentations
     results = model.train(
         data=str(data_path),
         epochs=epochs,
@@ -69,23 +58,22 @@ def train(
         optimizer=optimizer,
         lr0=lr0,
         lrf=0.01,
-        cos_lr=True,       # Cosine learning rate scheduler for smoother convergence
+        cos_lr=True,
         patience=patience,
         save=True,
         save_period=5,
         plots=True,
-        # Augmentations tuned specifically for road & lighting conditions:
-        hsv_h=0.015,       # Slight hue jitter
-        hsv_s=0.7,         # Wet/dry asphalt saturation variation
-        hsv_v=0.4,         # Shadow and daylight brightness jitter
-        degrees=5.0,       # Minor camera pitch/roll tilt
-        translate=0.1,     # Panning jitter
-        scale=0.5,         # Scale variations (near vs distant potholes)
-        perspective=0.0005,# Road surface perspective distortion
-        fliplr=0.5,        # Horizontal flip
-        mosaic=1.0,        # Multi-scale contextual mosaic
-        mixup=0.15,        # Image blending
-        close_mosaic=min(5, epochs // 4) if epochs > 5 else 0, # Disable mosaic in final epochs for pinpoint edge localization
+        hsv_h=0.015,
+        hsv_s=0.7,
+        hsv_v=0.4,
+        degrees=5.0,
+        translate=0.1,
+        scale=0.5,
+        perspective=0.0005,
+        fliplr=0.5,
+        mosaic=1.0,
+        mixup=0.15,
+        close_mosaic=min(5, epochs // 4) if epochs > 5 else 0,
         workers=0 if sys.platform == 'win32' else 4,
         verbose=True
     )
@@ -94,7 +82,6 @@ def train(
     print("  ✅ Training Completed Successfully!")
     print("=" * 65)
 
-    # Copy best weights to convenient weights/ directory
     best_pt = Path(results.save_dir) / "weights" / "best.pt"
     if not best_pt.exists():
         best_pt = Path(project) / name / "weights" / "best.pt"

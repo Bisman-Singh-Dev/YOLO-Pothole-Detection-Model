@@ -1,8 +1,3 @@
-"""
-Streamlit Web App Launcher Helper
-Allows running the web app cleanly via `python run_app.py` or double-clicking `run_app.bat`.
-"""
-
 import sys
 import subprocess
 

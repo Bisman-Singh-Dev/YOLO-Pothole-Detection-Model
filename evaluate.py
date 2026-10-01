@@ -1,15 +1,9 @@
-"""
-Comprehensive Model Evaluation & Benchmarking Script
-Calculates Precision, Recall, mAP@50, mAP@50-95, and inference latency on the test split.
-"""
-
 import os
 import sys
 import argparse
 from pathlib import Path
 from ultralytics import YOLO
 
-# Ensure utf-8 encoding on Windows console
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 

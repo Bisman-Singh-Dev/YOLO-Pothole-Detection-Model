@@ -1,8 +1,3 @@
-"""
-Prepare YOLO Pothole Detection Dataset
-Converts raw images, binary segmentation masks, and splits.csv into standard YOLO format.
-"""
-
 import os
 import argparse
 from pathlib import Path
@@ -36,7 +31,6 @@ def process_sample(args):
         
     orig_h, orig_w = mask.shape[:2]
     
-    # Extract pothole contours
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     yolo_labels = []
@@ -47,13 +41,11 @@ def process_sample(args):
             continue
             
         bx, by, bw, bh = cv2.boundingRect(cnt)
-        # Normalized coordinates relative to original mask/image
         x_center = (bx + bw / 2.0) / orig_w
         y_center = (by + bh / 2.0) / orig_h
         w_norm = bw / float(orig_w)
         h_norm = bh / float(orig_h)
         
-        # Clamp to [0, 1]
         x_center = max(0.0, min(1.0, x_center))
         y_center = max(0.0, min(1.0, y_center))
         w_norm = max(0.0, min(1.0, w_norm))
@@ -62,7 +54,6 @@ def process_sample(args):
         yolo_labels.append(f"0 {x_center:.6f} {y_center:.6f} {w_norm:.6f} {h_norm:.6f}")
         potholes_count += 1
         
-    # Resize image if target_size is specified
     if target_size:
         if (orig_w, orig_h) != (target_size, target_size):
             img_resized = cv2.resize(img, (target_size, target_size), interpolation=cv2.INTER_AREA)
@@ -72,7 +63,6 @@ def process_sample(args):
     else:
         cv2.imwrite(dst_img_path, img, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
         
-    # Save YOLO format annotations
     with open(dst_lbl_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(yolo_labels))
         
@@ -93,7 +83,6 @@ def convert_dataset(src_dir, out_dir, target_size=640, min_area=15, num_workers=
     print(f"Loaded splits.csv with {len(df)} records.")
     print("Split distribution:\n", df['Split'].value_counts())
     
-    # Create directories
     for split in ['train', 'val', 'test']:
         (out_path / "images" / split).mkdir(parents=True, exist_ok=True)
         (out_path / "labels" / split).mkdir(parents=True, exist_ok=True)
@@ -121,7 +110,6 @@ def convert_dataset(src_dir, out_dir, target_size=640, min_area=15, num_workers=
             
     print(f"\nSuccessfully converted {total_imgs} images with {total_potholes} pothole annotations!")
     
-    # Generate data.yaml
     yaml_content = {
         'path': str(out_path.resolve()).replace('\\', '/'),
         'train': 'images/train',
@@ -136,7 +124,6 @@ def convert_dataset(src_dir, out_dir, target_size=640, min_area=15, num_workers=
         yaml.dump(yaml_content, f, sort_keys=False)
     print(f"Generated dataset configuration: {yaml_file}")
     
-    # Also save a local relative data.yaml for portability
     rel_yaml = {
         'path': './dataset',
         'train': 'images/train',
